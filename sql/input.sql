@@ -40,8 +40,6 @@ churn_target AS (
       -- Has next payment within 32 days = active
       ELSE 0
     END AS is_churn,
-    MAX(b.date) AS next_payment_date,
-    DATE_DIFF(DATE(MAX(b.date)), DATE(a.date), DAY) AS days_to_next_payment
   FROM `churney-tech-interview-project.interview_sql_datasets.monthly_payments` a
   LEFT JOIN `churney-tech-interview-project.interview_sql_datasets.monthly_payments` b
     ON a.user_id = b.user_id
