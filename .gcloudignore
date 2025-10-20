@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.venv/
+venv/
+.python-version
+
+# Model artifacts (don't need in Docker image)
+*.bst
+*.json
+model.json
+model.bst
+model_metadata.json
+churn_pipeline.json
+
+# Git
+.git/
+.gitignore
+
+# Terraform
+terraform/
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Pipeline directory (not needed in container)
+pipeline/
+
+# Documentation
+README.md
+
+# Build logs
+*.log
+
+# Lock files
+uv.lock
+
+# Unused files
+component.py
+pipeline.py
+deploy_pipeline.py
+draft.py
