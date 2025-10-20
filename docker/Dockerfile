@@ -2,18 +2,9 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install dependencies
+# Copy dependency file and install dependencies
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir \
-    google-cloud-bigquery \
-    pandas \
-    numpy \
-    xgboost \
-    optuna \
-    scikit-learn \
-    pyyaml \
-    pydantic \
-    db-dtypes
+RUN pip install uv && uv pip install --system .
 
 # Copy trainer code and config
 COPY trainer/ ./trainer/

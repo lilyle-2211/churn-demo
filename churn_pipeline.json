@@ -1,0 +1,99 @@
+{
+  "components": {
+    "comp-train-churn-model": {
+      "executorLabel": "exec-train-churn-model",
+      "inputDefinitions": {
+        "parameters": {
+          "project_id": {
+            "parameterType": "STRING"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "artifacts": {
+          "metrics_output": {
+            "artifactType": {
+              "schemaTitle": "system.Metrics",
+              "schemaVersion": "0.0.1"
+            }
+          },
+          "model_output": {
+            "artifactType": {
+              "schemaTitle": "system.Model",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        }
+      }
+    }
+  },
+  "deploymentSpec": {
+    "executors": {
+      "exec-train-churn-model": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "train_churn_model"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'kfp==2.14.6' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef train_churn_model(\n    project_id: str,\n    model_output: Output[Model],\n    metrics_output: Output[Metrics],\n):\n    import sys\n\n    sys.path.append(\"/app\")\n    from trainer.main import main\n\n    # Run the pipeline\n    model, metrics = main()\n\n    # Log metrics\n    print(f\"Test PR-AUC: {metrics['pr_auc_test']:.4f}\")\n    print(f\"Test ROC-AUC: {metrics['roc_auc_test']:.4f}\")\n\n    # Record metrics for Vertex AI\n    metrics_output.log_metric(\"pr_auc_test\", metrics[\"pr_auc_test\"])\n    metrics_output.log_metric(\"roc_auc_test\", metrics[\"roc_auc_test\"])\n\n"
+          ],
+          "image": "us-central1-docker.pkg.dev/lily-demo-ml/churn-pipeline/churn-trainer:latest",
+          "resources": {
+            "cpuLimit": 4.0,
+            "memoryLimit": 16.0,
+            "resourceCpuLimit": "4",
+            "resourceMemoryLimit": "16G"
+          }
+        }
+      }
+    }
+  },
+  "pipelineInfo": {
+    "description": "Churn prediction pipeline.",
+    "name": "churn-prediction-pipeline"
+  },
+  "root": {
+    "dag": {
+      "tasks": {
+        "train-churn-model": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-train-churn-model"
+          },
+          "inputs": {
+            "parameters": {
+              "project_id": {
+                "componentInputParameter": "project_id"
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "train-churn-model"
+          }
+        }
+      }
+    },
+    "inputDefinitions": {
+      "parameters": {
+        "project_id": {
+          "defaultValue": "lily-demo-ml",
+          "isOptional": true,
+          "parameterType": "STRING"
+        }
+      }
+    }
+  },
+  "schemaVersion": "2.1.0",
+  "sdkVersion": "kfp-2.14.6"
+}

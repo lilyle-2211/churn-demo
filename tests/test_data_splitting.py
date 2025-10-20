@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from trainer.data_splitting import compute_scale_pos_weight, time_ordered_split
+from trainer.data_preprocessing import compute_scale_pos_weight, time_ordered_split
 
 
 @pytest.fixture
@@ -15,44 +15,39 @@ def sample_data():
         "user_id": np.repeat(range(20), 5),
         "payment_date": np.tile(dates[:5], 20),
     }
+    # Add a random is_churn column (binary target)
+    data["is_churn"] = np.random.randint(0, 2, size=100)
     return pd.DataFrame(data)
 
 
 def test_time_ordered_split(sample_data):
     """Test time-ordered splitting returns correct shapes."""
-    train_mask, val_mask, test_mask, train_users, val_users, test_users = time_ordered_split(
-        sample_data, test_frac=0.2, val_frac=0.1
+    feature_cols = ["payment_date"]
+    X_train, y_train, X_val, y_val, X_test, y_test = time_ordered_split(
+        sample_data, test_frac=0.2, val_frac=0.1, feature_cols=feature_cols
     )
 
-    # Check masks are boolean arrays
-    assert train_mask.dtype == bool
-    assert val_mask.dtype == bool
-    assert test_mask.dtype == bool
+    # Check shapes
+    total_rows = len(sample_data)
+    assert X_train.shape[0] + X_val.shape[0] + X_test.shape[0] == total_rows
+    assert y_train.shape[0] + y_val.shape[0] + y_test.shape[0] == total_rows
 
-    # Check all rows are assigned to exactly one set
-    assert (train_mask | val_mask | test_mask).all()
-    assert not (train_mask & val_mask).any()
-    assert not (train_mask & test_mask).any()
-    assert not (val_mask & test_mask).any()
-
-    # Check user sets are disjoint
-    assert len(train_users & val_users) == 0
-    assert len(train_users & test_users) == 0
-    assert len(val_users & test_users) == 0
+    # Check that all y values are present
+    assert set(y_train) | set(y_val) | set(y_test) <= {0, 1}
 
 
 def test_time_ordered_split_fractions(sample_data):
     """Test split fractions are approximately correct."""
-    train_mask, val_mask, test_mask, train_users, val_users, test_users = time_ordered_split(
-        sample_data, test_frac=0.2, val_frac=0.1
+    feature_cols = ["payment_date"]
+    X_train, y_train, X_val, y_val, X_test, y_test = time_ordered_split(
+        sample_data, test_frac=0.2, val_frac=0.1, feature_cols=feature_cols
     )
 
-    total_users = len(train_users) + len(val_users) + len(test_users)
-
-    # Check user counts (approximate due to rounding)
-    assert len(train_users) / total_users > 0.65  # ~70%
-    assert len(val_users) / total_users < 0.15  # ~10%
-    assert len(test_users) / total_users < 0.25  # ~20%
+    total = len(sample_data)
+    # Check split fractions (approximate due to user grouping and rounding)
+    assert X_train.shape[0] / total > 0.65  # ~70%
+    assert X_val.shape[0] / total < 0.15  # ~10%
+    assert X_test.shape[0] / total < 0.25  # ~20%
 
 
 def test_compute_scale_pos_weight():

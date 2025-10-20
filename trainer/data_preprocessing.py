@@ -35,7 +35,7 @@ def time_ordered_split(df, test_frac, val_frac, feature_cols, label_col="is_chur
     """
     logger.info("Time-ordered split by user signup date")
 
-    # Time-ordered split (simple version)
+    # Time-ordered split
     user_signup = df.groupby("user_id")["payment_date"].min().sort_values()
     n_users = len(user_signup)
     test_start = int((1.0 - test_frac) * n_users)
@@ -58,15 +58,9 @@ def time_ordered_split(df, test_frac, val_frac, feature_cols, label_col="is_chur
     logger.info(
         f"Rows: total={len(df)}, train={len(X_train)}, val={len(X_val)}, test={len(X_test)}"
     )
-    logger.info(
-        f"Train period: {user_signup.iloc[0]['signup_date']} to {user_signup.iloc[val_start-1]['signup_date']}"
-    )
-    logger.info(
-        f"Val period:   {user_signup.iloc[val_start]['signup_date']} to {user_signup.iloc[test_start-1]['signup_date']}"
-    )
-    logger.info(
-        f"Test period:  {user_signup.iloc[test_start]['signup_date']} to {user_signup.iloc[-1]['signup_date']}"
-    )
+    logger.info(f"Train period: {user_signup.iloc[0]} to {user_signup.iloc[val_start-1]}")
+    logger.info(f"Val period:   {user_signup.iloc[val_start]} to {user_signup.iloc[test_start-1]}")
+    logger.info(f"Test period:  {user_signup.iloc[test_start]} to {user_signup.iloc[-1]}")
 
     return X_train, y_train, X_val, y_val, X_test, y_test
 

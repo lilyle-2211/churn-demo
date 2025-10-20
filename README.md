@@ -48,7 +48,6 @@ churn-demo/
 ```
 
 
-
 ## Usage
 
 - Run the pipeline locally: `make run`
@@ -56,9 +55,3 @@ churn-demo/
 - Build Docker image: `make build`
 - Deploy pipeline: `make deploy`
 - Provision infrastructure: `make terraform`
-
-
-
-
-## eda
-- Example notebooks for model evaluation and metrics are provided.

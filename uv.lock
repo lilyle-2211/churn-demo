@@ -134,40 +134,45 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "db-dtypes" },
-    { name = "google-cloud-aiplatform" },
     { name = "google-cloud-bigquery" },
-    { name = "joblib" },
-    { name = "kfp" },
     { name = "numpy" },
     { name = "optuna" },
     { name = "pandas" },
-    { name = "pre-commit" },
     { name = "pydantic" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
     { name = "pyyaml" },
     { name = "scikit-learn" },
     { name = "xgboost" },
 ]
 
+[package.optional-dependencies]
+dev = [
+    { name = "google-cloud-aiplatform" },
+    { name = "joblib" },
+    { name = "kfp" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "db-dtypes" },
-    { name = "google-cloud-aiplatform" },
+    { name = "google-cloud-aiplatform", marker = "extra == 'dev'" },
     { name = "google-cloud-bigquery" },
-    { name = "joblib" },
-    { name = "kfp" },
+    { name = "joblib", marker = "extra == 'dev'" },
+    { name = "kfp", marker = "extra == 'dev'" },
     { name = "numpy" },
     { name = "optuna" },
     { name = "pandas" },
-    { name = "pre-commit" },
+    { name = "pre-commit", marker = "extra == 'dev'" },
     { name = "pydantic", specifier = ">=2.0" },
-    { name = "pytest", specifier = ">=7.0" },
-    { name = "pytest-cov", specifier = ">=4.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0" },
     { name = "pyyaml" },
     { name = "scikit-learn" },
     { name = "xgboost" },
 ]
+provides-extras = ["dev"]
 
 [[package]]
 name = "click"
