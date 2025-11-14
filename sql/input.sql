@@ -3,7 +3,7 @@ WITH user_first_payment AS (
   SELECT
     user_id,
     MIN(date) AS first_payment_date
-  FROM `churney-tech-interview-project.interview_sql_datasets.monthly_payments`
+  FROM `lily-demo-ml.sql_datasets.monthly_payments`
   GROUP BY user_id
 ),
 data_window AS (
@@ -11,7 +11,7 @@ data_window AS (
   SELECT
     MAX(date) AS data_end_date,
     TIMESTAMP_SUB(MAX(date), INTERVAL 32 DAY) AS observation_cutoff
-  FROM `churney-tech-interview-project.interview_sql_datasets.monthly_payments`
+  FROM `lily-demo-ml.sql_datasets.monthly_payments`
 ),
 payment_features AS (
   SELECT
@@ -24,7 +24,7 @@ payment_features AS (
     CASE WHEN ROW_NUMBER() OVER (PARTITION BY mp.user_id ORDER BY mp.date) = 1
          THEN 1 ELSE 0 END AS is_first_month
 
-  FROM `churney-tech-interview-project.interview_sql_datasets.monthly_payments` mp
+  FROM `lily-demo-ml.sql_datasets.monthly_payments` mp
   INNER JOIN user_first_payment ufp
     ON mp.user_id = ufp.user_id
   CROSS JOIN data_window dw
@@ -40,8 +40,8 @@ churn_target AS (
       -- Has next payment within 32 days = active
       ELSE 0
     END AS is_churn,
-  FROM `churney-tech-interview-project.interview_sql_datasets.monthly_payments` a
-  LEFT JOIN `churney-tech-interview-project.interview_sql_datasets.monthly_payments` b
+  FROM `lily-demo-ml.sql_datasets.monthly_payments` a
+  LEFT JOIN `lily-demo-ml.sql_datasets.monthly_payments` b
     ON a.user_id = b.user_id
     AND b.date > a.date
     AND b.date <= TIMESTAMP_ADD(a.date, INTERVAL 32 DAY)
@@ -72,7 +72,7 @@ SELECT
     ELSE 'active'
   END AS status
 FROM payment_features pf
-LEFT JOIN `churney-tech-interview-project.interview_sql_datasets.user_table` u
+LEFT JOIN `lily-demo-ml.sql_datasets.user_table` u
   ON pf.user_id = u.user_id
 LEFT JOIN churn_target ct
   ON pf.user_id = ct.user_id
