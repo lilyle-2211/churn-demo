@@ -44,7 +44,7 @@ resource "google_storage_bucket" "pipeline_bucket" {
   location = var.region
 
   uniform_bucket_level_access = true
-  force_destroy               = false
+  force_destroy               = true
 
   depends_on = [google_project_service.required_apis]
 }
@@ -78,32 +78,6 @@ resource "google_project_iam_member" "user_bigquery_admin" {
   project = var.project_id
   role    = "roles/bigquery.admin"
   member  = "user:${var.user_email}"
-}
-
-# Grant additional users (non-owner) permissions for all required roles
-locals {
-  additional_roles = [
-    "roles/bigquery.dataEditor",
-    "roles/aiplatform.user",
-    "roles/storage.objectAdmin",
-    "roles/artifactregistry.writer",
-    "roles/cloudbuild.builds.editor"
-  ]
-  additional_user_role_pairs = flatten([
-    for email in var.additional_user_emails : [
-      for role in local.additional_roles : {
-        email = email
-        role  = role
-      }
-    ]
-  ])
-}
-
-resource "google_project_iam_member" "additional_user_roles" {
-  for_each = { for pair in local.additional_user_role_pairs : "${pair.email}_${pair.role}" => pair }
-  project = var.project_id
-  role    = each.value.role
-  member  = "user:${each.value.email}"
 }
 
 # Grant Compute Engine service account permissions

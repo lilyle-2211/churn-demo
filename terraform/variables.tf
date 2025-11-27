@@ -21,13 +21,3 @@ variable "user_email" {
   type        = string
   default     = "lelisa.dk@gmail.com"
 }
-
-variable "additional_user_emails" {
-  description = "List of additional user emails for IAM permissions (non-owner)"
-  type        = list(string)
-  default     = [
-    "brian@churney.io",
-    "martin@churney.io",
-    "christian@churney.io"
-  ]
-}
