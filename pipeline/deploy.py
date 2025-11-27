@@ -9,7 +9,7 @@ from kfp import compiler, dsl
 from kfp.dsl import Metrics, Model, Output, component
 
 # Use custom container image with all modules pre-installed
-CONTAINER_IMAGE = "us-central1-docker.pkg.dev/lily-demo-ml/churn-pipeline/churn-trainer:latest"
+CONTAINER_IMAGE = "europe-west-1b-docker.pkg.dev/lily-demo-ml/churn-pipeline/churn-trainer:latest"
 
 
 @component(base_image=CONTAINER_IMAGE)
@@ -46,8 +46,10 @@ def churn_pipeline(project_id: str = "lily-demo-ml"):
 def deploy(project_id: str, region: str = "us-central1", bucket: str = None):
     """Compile and run pipeline."""
     # Compile
-    compiler.Compiler().compile(pipeline_func=churn_pipeline, package_path="churn_pipeline.json")
-    print("Pipeline compiled to churn_pipeline.json")
+    compiler.Compiler().compile(
+        pipeline_func=churn_pipeline, package_path="churn_demo_pipeline.json"
+    )
+    print("Pipeline compiled to churn_demo_pipeline.json")
 
     # Deploy
     if bucket is None:
@@ -57,7 +59,7 @@ def deploy(project_id: str, region: str = "us-central1", bucket: str = None):
 
     job = aiplatform.PipelineJob(
         display_name="churn-prediction",
-        template_path="churn_pipeline.json",
+        template_path="churn_demo_pipeline.json",
         pipeline_root=f"gs://{bucket}/churn",
         parameter_values={"project_id": project_id},
         enable_caching=False,
