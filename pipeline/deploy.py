@@ -9,7 +9,7 @@ from kfp import compiler, dsl
 from kfp.dsl import Metrics, Model, Output, component
 
 # Use custom container image with all modules pre-installed
-CONTAINER_IMAGE = "us-central1-docker.pkg.dev/lily-demo-ml/churn-pipeline/churn-trainer:latest"
+CONTAINER_IMAGE = "europe-west-1b-docker.pkg.dev/lily-demo-ml/churn-pipeline/churn-trainer:latest"
 
 
 @component(base_image=CONTAINER_IMAGE)
