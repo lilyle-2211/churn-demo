@@ -17,3 +17,19 @@ output "region" {
   description = "GCP Region"
   value       = var.region
 }
+
+# GitHub Actions Workload Identity outputs
+output "github_actions_service_account" {
+  description = "GitHub Actions service account email"
+  value       = module.github_actions.service_account_email
+}
+
+output "workload_identity_provider" {
+  description = "Workload Identity Provider name for GitHub secrets"
+  value       = module.github_actions.workload_identity_provider
+}
+
+output "github_secrets_instructions" {
+  description = "Instructions for setting up GitHub secrets"
+  value       = module.github_actions.github_secrets_instructions
+}

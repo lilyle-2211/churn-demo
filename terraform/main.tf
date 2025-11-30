@@ -1,5 +1,6 @@
 terraform {
   required_version = ">= 1.0"
+
   required_providers {
     google = {
       source  = "hashicorp/google"
@@ -22,6 +23,9 @@ resource "google_project_service" "required_apis" {
     "cloudbuild.googleapis.com",
     "artifactregistry.googleapis.com",
     "storage.googleapis.com",
+    "iam.googleapis.com",
+    "iamcredentials.googleapis.com",
+    "sts.googleapis.com",
   ])
 
   service            = each.key
@@ -41,7 +45,7 @@ resource "google_artifact_registry_repository" "churn_pipeline" {
 # Create GCS bucket for pipeline artifacts
 resource "google_storage_bucket" "pipeline_bucket" {
   name     = "${var.project_id}-pipeline"
-  location = var.region
+  location = "US" # Multi-region bucket
 
   uniform_bucket_level_access = true
   force_destroy               = true
@@ -50,34 +54,34 @@ resource "google_storage_bucket" "pipeline_bucket" {
 }
 
 # Grant user permissions
-resource "google_project_iam_member" "user_aiplatform_admin" {
-  project = var.project_id
-  role    = "roles/aiplatform.admin"
-  member  = "user:${var.user_email}"
+locals {
+  users_yaml = yamldecode(file("${path.module}/users.yaml"))
+  user_emails = length(var.user_emails) > 0 ? var.user_emails : local.users_yaml.users
+
+  user_roles = toset([
+    "roles/aiplatform.admin",
+    "roles/storage.admin",
+    "roles/cloudbuild.builds.editor",
+    "roles/artifactregistry.admin",
+    "roles/bigquery.admin",
+  ])
+
+  user_role_bindings = flatten([
+    for email in local.user_emails : [
+      for role in local.user_roles : {
+        email = email
+        role  = role
+      }
+    ]
+  ])
 }
 
-resource "google_project_iam_member" "user_storage_admin" {
-  project = var.project_id
-  role    = "roles/storage.admin"
-  member  = "user:${var.user_email}"
-}
+resource "google_project_iam_member" "users" {
+  for_each = { for binding in local.user_role_bindings : "${binding.email}-${binding.role}" => binding }
 
-resource "google_project_iam_member" "user_cloudbuild_editor" {
   project = var.project_id
-  role    = "roles/cloudbuild.builds.editor"
-  member  = "user:${var.user_email}"
-}
-
-resource "google_project_iam_member" "user_artifact_registry_admin" {
-  project = var.project_id
-  role    = "roles/artifactregistry.admin"
-  member  = "user:${var.user_email}"
-}
-
-resource "google_project_iam_member" "user_bigquery_admin" {
-  project = var.project_id
-  role    = "roles/bigquery.admin"
-  member  = "user:${var.user_email}"
+  role    = each.value.role
+  member  = "user:${each.value.email}"
 }
 
 # Grant Compute Engine service account permissions
@@ -153,4 +157,28 @@ resource "google_project_iam_member" "aiplatform_sa_storage_object_viewer" {
   project = var.project_id
   role    = "roles/storage.objectViewer"
   member  = "serviceAccount:service-${var.project_number}@gcp-sa-aiplatform.iam.gserviceaccount.com"
+}
+
+# ============================================================================
+# GitHub Actions - Workload Identity Federation
+# ============================================================================
+
+module "github_actions" {
+  source = "./modules/github-actions"
+
+  project_id  = var.project_id
+  github_org  = var.github_org
+  github_repo = var.github_repo
+
+  project_roles = [
+    "roles/aiplatform.user",
+    "roles/artifactregistry.writer",
+    "roles/storage.objectAdmin",
+    "roles/storage.admin",
+    "roles/cloudbuild.builds.builder",
+    "roles/serviceusage.serviceUsageConsumer",
+    "roles/iam.serviceAccountUser",
+  ]
+
+  depends_on = [google_project_service.required_apis]
 }
