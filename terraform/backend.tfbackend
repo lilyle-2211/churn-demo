@@ -1,0 +1,5 @@
+# Terraform Backend Configuration
+# Store state in GCS bucket with versioning enabled
+
+bucket = "lily-demo-ml-pipeline"
+prefix = "terraform/state"

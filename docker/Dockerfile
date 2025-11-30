@@ -2,12 +2,12 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Copy dependency file and install dependencies
+# Copy project files needed for installation
 COPY pyproject.toml ./
-RUN pip install uv && uv pip install --system .
-
-# Copy trainer code and config
 COPY trainer/ ./trainer/
+
+# Install dependencies
+RUN pip install uv && uv pip install --system .
 
 # Set Python path to include trainer directory
 ENV PYTHONPATH=/app:/app/trainer

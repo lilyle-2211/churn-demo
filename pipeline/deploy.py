@@ -3,13 +3,14 @@
 Deploy churn prediction training job to Vertex AI.
 """
 import argparse
+import os
 
 from google.cloud import aiplatform
 from kfp import compiler, dsl
 from kfp.dsl import Metrics, Model, Output, component
 
 # Use custom container image with all modules pre-installed
-CONTAINER_IMAGE = "europe-west-1b-docker.pkg.dev/lily-demo-ml/churn-pipeline/churn-trainer:latest"
+CONTAINER_IMAGE = "us-central1-docker.pkg.dev/lily-demo-ml/churn-pipeline/churn-trainer:latest"
 
 
 @component(base_image=CONTAINER_IMAGE)
@@ -67,6 +68,11 @@ def deploy(project_id: str, region: str = "us-central1", bucket: str = None):
 
     job.submit(service_account=None)
     print(f"Pipeline submitted: {job.resource_name}")
+
+    # Clean up the compiled pipeline file
+    if os.path.exists("churn_demo_pipeline.json"):
+        os.remove("churn_demo_pipeline.json")
+        print("Cleaned up churn_demo_pipeline.json")
 
 
 if __name__ == "__main__":
