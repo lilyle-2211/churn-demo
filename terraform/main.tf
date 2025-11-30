@@ -1,5 +1,12 @@
 terraform {
   required_version = ">= 1.0"
+
+  # TODO: Enable GCS backend once billing issue is resolved
+  # backend "gcs" {
+  #   bucket = "lily-demo-ml-tfstate"
+  #   prefix = "terraform/state"
+  # }
+
   required_providers {
     google = {
       source  = "hashicorp/google"
@@ -22,6 +29,9 @@ resource "google_project_service" "required_apis" {
     "cloudbuild.googleapis.com",
     "artifactregistry.googleapis.com",
     "storage.googleapis.com",
+    "iam.googleapis.com",
+    "iamcredentials.googleapis.com",
+    "sts.googleapis.com",
   ])
 
   service            = each.key
@@ -41,7 +51,7 @@ resource "google_artifact_registry_repository" "churn_pipeline" {
 # Create GCS bucket for pipeline artifacts
 resource "google_storage_bucket" "pipeline_bucket" {
   name     = "${var.project_id}-pipeline"
-  location = var.region
+  location = "US" # Multi-region bucket
 
   uniform_bucket_level_access = true
   force_destroy               = true
@@ -153,4 +163,28 @@ resource "google_project_iam_member" "aiplatform_sa_storage_object_viewer" {
   project = var.project_id
   role    = "roles/storage.objectViewer"
   member  = "serviceAccount:service-${var.project_number}@gcp-sa-aiplatform.iam.gserviceaccount.com"
+}
+
+# ============================================================================
+# GitHub Actions - Workload Identity Federation
+# ============================================================================
+
+module "github_actions" {
+  source = "./modules/github-actions"
+
+  project_id  = var.project_id
+  github_org  = var.github_org
+  github_repo = var.github_repo
+
+  project_roles = [
+    "roles/aiplatform.user",
+    "roles/artifactregistry.writer",
+    "roles/storage.objectAdmin",
+    "roles/storage.admin",
+    "roles/cloudbuild.builds.builder",
+    "roles/serviceusage.serviceUsageConsumer",
+    "roles/iam.serviceAccountUser",
+  ]
+
+  depends_on = [google_project_service.required_apis]
 }

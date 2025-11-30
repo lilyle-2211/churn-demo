@@ -1,4 +1,4 @@
-.PHONY: help build deploy run terraform clean
+.PHONY: help build deploy run terraform lint-terraform clean
 
 # Project configuration
 PROJECT_ID := lily-demo-ml
@@ -7,10 +7,11 @@ IMAGE_URI := $(REGION)-docker.pkg.dev/$(PROJECT_ID)/churn-pipeline/churn-trainer
 
 help:
 	@echo "Available commands:"
-	@echo "  make build      - Build and push Docker image to Artifact Registry"
-	@echo "  make deploy     - Deploy training job to Vertex AI"
-	@echo "  make run        - Run training locally with uv"
-	@echo "  make terraform  - Apply Terraform infrastructure"
+	@echo "  make build           - Build and push Docker image to Artifact Registry"
+	@echo "  make deploy          - Deploy training job to Vertex AI"
+	@echo "  make run             - Run training locally with uv"
+	@echo "  make terraform       - Apply Terraform infrastructure"
+	@echo "  make lint-terraform  - Lint Terraform code with TFLint"
 
 build:
 	@echo "Building Docker image: $(IMAGE_URI)"
@@ -30,3 +31,8 @@ terraform:
 	@echo "Applying Terraform configuration..."
 	cd terraform && terraform init && terraform apply
 	@echo "Infrastructure deployed"
+
+lint-terraform:
+	@echo "Linting Terraform code..."
+	cd terraform && tflint --init && tflint
+	@echo "Terraform linting complete"
