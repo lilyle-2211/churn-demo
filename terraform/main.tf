@@ -1,12 +1,6 @@
 terraform {
   required_version = ">= 1.0"
 
-  # TODO: Enable GCS backend once billing issue is resolved
-  # backend "gcs" {
-  #   bucket = "lily-demo-ml-tfstate"
-  #   prefix = "terraform/state"
-  # }
-
   required_providers {
     google = {
       source  = "hashicorp/google"
@@ -60,34 +54,34 @@ resource "google_storage_bucket" "pipeline_bucket" {
 }
 
 # Grant user permissions
-resource "google_project_iam_member" "user_aiplatform_admin" {
-  project = var.project_id
-  role    = "roles/aiplatform.admin"
-  member  = "user:${var.user_email}"
+locals {
+  users_yaml = yamldecode(file("${path.module}/users.yaml"))
+  user_emails = length(var.user_emails) > 0 ? var.user_emails : local.users_yaml.users
+
+  user_roles = toset([
+    "roles/aiplatform.admin",
+    "roles/storage.admin",
+    "roles/cloudbuild.builds.editor",
+    "roles/artifactregistry.admin",
+    "roles/bigquery.admin",
+  ])
+
+  user_role_bindings = flatten([
+    for email in local.user_emails : [
+      for role in local.user_roles : {
+        email = email
+        role  = role
+      }
+    ]
+  ])
 }
 
-resource "google_project_iam_member" "user_storage_admin" {
-  project = var.project_id
-  role    = "roles/storage.admin"
-  member  = "user:${var.user_email}"
-}
+resource "google_project_iam_member" "users" {
+  for_each = { for binding in local.user_role_bindings : "${binding.email}-${binding.role}" => binding }
 
-resource "google_project_iam_member" "user_cloudbuild_editor" {
   project = var.project_id
-  role    = "roles/cloudbuild.builds.editor"
-  member  = "user:${var.user_email}"
-}
-
-resource "google_project_iam_member" "user_artifact_registry_admin" {
-  project = var.project_id
-  role    = "roles/artifactregistry.admin"
-  member  = "user:${var.user_email}"
-}
-
-resource "google_project_iam_member" "user_bigquery_admin" {
-  project = var.project_id
-  role    = "roles/bigquery.admin"
-  member  = "user:${var.user_email}"
+  role    = each.value.role
+  member  = "user:${each.value.email}"
 }
 
 # Grant Compute Engine service account permissions

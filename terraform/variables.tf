@@ -16,10 +16,23 @@ variable "region" {
   default     = "us-central1"
 }
 
-variable "user_email" {
-  description = "User email for IAM permissions"
+variable "user_emails" {
+  description = "List of user emails for IAM permissions (loaded from users.yaml)"
+  type        = list(string)
+  default     = []
+}
+
+
+variable "github_org" {
+  description = "GitHub organization or username"
   type        = string
-  default     = "lelisa.dk@gmail.com"
+  default     = "lilyle-2211"
+}
+
+variable "github_repo" {
+  description = "GitHub repository name"
+  type        = string
+  default     = "churn-demo"
 }
 
 variable "github_org" {
